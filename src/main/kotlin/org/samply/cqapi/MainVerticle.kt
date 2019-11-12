@@ -1,25 +1,32 @@
 package org.samply.cqapi
 
+import dagger.Component
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise
+import org.samply.cqapi.web.ServerVerticle
+import javax.inject.Singleton
 
 class MainVerticle : AbstractVerticle() {
 
-  override fun start(startPromise: Promise<Void>) {
-    vertx
-      .createHttpServer()
-      .requestHandler { req ->
-        req.response()
-          .putHeader("content-type", "text/plain")
-          .end("Hello from Vert.x!")
-      }
-      .listen(8888) { http ->
-        if (http.succeeded()) {
-          startPromise.complete()
-          println("HTTP server started on port 8888")
-        } else {
-          startPromise.fail(http.cause());
-        }
-      }
+  @Singleton
+  @Component
+  interface CatalogQueryApi {
+    fun server(): ServerVerticle
   }
+
+  override fun start(startPromise: Promise<Void>) {
+    val serverVerticle = DaggerMainVerticle_CatalogQueryApi
+      .create()
+      .server()
+
+    vertx.deployVerticle(serverVerticle) {
+      if (it.failed()) {
+        startPromise.fail(it.cause());
+      } else {
+        startPromise.complete()
+      }
+    }
+
+  }
+
 }
