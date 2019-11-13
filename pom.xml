@@ -24,7 +24,23 @@
     <main.verticle>org.samply.cqapi.MainVerticle</main.verticle>
     <vertx.verticle>${main.verticle}</vertx.verticle>
     <dagger.version>2.25.2</dagger.version>
+    <confluent.version>5.3.1</confluent.version>
+    <avro.version>1.9.1</avro.version>
   </properties>
+
+  <repositories>
+    <repository>
+      <id>confluent-repo</id>
+      <url>https://packages.confluent.io/maven/</url>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>confluent-repo</id>
+      <url>https://packages.confluent.io/maven/</url>
+    </pluginRepository>
+  </pluginRepositories>
 
   <dependencyManagement>
     <dependencies>
@@ -42,6 +58,10 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-config</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-config-yaml</artifactId>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
@@ -67,6 +87,21 @@
       <groupId>com.google.dagger</groupId>
       <artifactId>dagger</artifactId>
       <version>${dagger.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-streams</artifactId>
+      <version>2.3.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-streams-avro-serde</artifactId>
+      <version>${confluent.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>${avro.version}</version>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
@@ -230,6 +265,40 @@
         <configuration>
             <redeploy>true</redeploy>
         </configuration>
+    </plugin>
+    <plugin>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-schema-registry-maven-plugin</artifactId>
+      <version>${confluent.version}</version>
+      <configuration>
+        <outputDirectory>src/main/avro</outputDirectory>
+        <schemaRegistryUrls>
+          <param>http://localhost:8081</param>
+        </schemaRegistryUrls>
+        <subjectPatterns>
+          <param>item-created-log-value</param>
+        </subjectPatterns>
+      </configuration>
+      <goals>
+        <goal>test-compatibility</goal>
+      </goals>
+    </plugin>
+    <plugin>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro-maven-plugin</artifactId>
+      <version>${avro.version}</version>
+      <executions>
+        <execution>
+          <phase>generate-sources</phase>
+          <goals>
+            <goal>schema</goal>
+          </goals>
+          <configuration>
+            <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
+            <outputDirectory>${project.basedir}/src/main/java/</outputDirectory>
+          </configuration>
+        </execution>
+      </executions>
     </plugin>
     </plugins>
   </build>

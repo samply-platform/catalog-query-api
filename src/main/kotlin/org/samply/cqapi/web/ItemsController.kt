@@ -1,11 +1,12 @@
 package org.samply.cqapi.web
 
 import io.vertx.ext.web.RoutingContext
+import org.apache.kafka.streams.KafkaStreams
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class ItemsController @Inject constructor() {
+class ItemsController @Inject constructor(kafkaStreams: KafkaStreams) {
 
   fun getItemById(routingContext: RoutingContext) {
     routingContext.response()
