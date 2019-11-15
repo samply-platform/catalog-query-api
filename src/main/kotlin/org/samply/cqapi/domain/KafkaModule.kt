@@ -14,9 +14,14 @@ import org.apache.kafka.streams.kstream.Materialized
 import org.apache.kafka.streams.state.KeyValueStore
 import org.samply.catalog.api.domain.model.Item
 import java.util.*
+import javax.inject.Singleton
 
 @Module
-class KafkaStreamsModule constructor(private val config: JsonObject) {
+class KafkaModule constructor(private val config: JsonObject) {
+
+  companion object {
+    const val ITEM_CREATED_TABLE_STORE = "item-created-table"
+  }
 
   private fun streamsConfig(): Properties {
     val kafkaConfig = config.getJsonObject("kafka")
@@ -29,6 +34,7 @@ class KafkaStreamsModule constructor(private val config: JsonObject) {
   }
 
   @Provides
+  @Singleton
   fun streams(): KafkaStreams {
     val registryUrl = config.getJsonObject("kafka").getString("registryUrl")
 
@@ -39,7 +45,7 @@ class KafkaStreamsModule constructor(private val config: JsonObject) {
     streamsBuilder.table(
       "item-created-log",
       Consumed.with(Serdes.String(), itemSerde),
-      Materialized.`as`<String, Item, KeyValueStore<Bytes, ByteArray>>("item-created-table")
+      Materialized.`as`<String, Item, KeyValueStore<Bytes, ByteArray>>(ITEM_CREATED_TABLE_STORE)
     )
 
     return KafkaStreams(streamsBuilder.build(), streamsConfig())

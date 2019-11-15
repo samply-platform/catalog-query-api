@@ -15,9 +15,12 @@ class ItemsController @Inject constructor(private val itemsQueryService: ItemsQu
   suspend fun getItemById(routingContext: RoutingContext) {
     val itemById = itemsQueryService.findById(routingContext.request().getParam("id"))
 
-    routingContext.response()
-      .putHeader("content-type", "application/json")
-      .end(Json.encodePrettily(itemById))
+    when (itemById) {
+      null -> routingContext.response().setStatusCode(404).end()
+      else -> routingContext.response()
+        .putHeader("content-type", "application/json")
+        .end(Json.encodePrettily(itemById))
+    }
   }
 
 }

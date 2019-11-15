@@ -10,14 +10,14 @@ import io.vertx.kotlin.core.deployVerticleAwait
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.coroutines.CoroutineVerticle
-import org.samply.cqapi.domain.KafkaStreamsModule
+import org.samply.cqapi.domain.KafkaModule
 import org.samply.cqapi.web.ServerVerticle
 import javax.inject.Singleton
 
 class MainVerticle : CoroutineVerticle() {
 
   @Singleton
-  @Component(modules = [KafkaStreamsModule::class])
+  @Component(modules = [KafkaModule::class])
   interface CatalogQueryApi {
     fun server(): ServerVerticle
   }
@@ -25,7 +25,7 @@ class MainVerticle : CoroutineVerticle() {
   override suspend fun start() {
     val cqapi = DaggerMainVerticle_CatalogQueryApi
       .builder()
-      .kafkaStreamsModule(KafkaStreamsModule(getConfig()))
+      .kafkaModule(KafkaModule(getConfig()))
       .build()
 
     vertx.deployVerticleAwait(cqapi.server())
