@@ -23,13 +23,12 @@ class MainVerticle : CoroutineVerticle() {
   }
 
   override suspend fun start() {
-    val serverVerticle = DaggerMainVerticle_CatalogQueryApi
+    val cqapi = DaggerMainVerticle_CatalogQueryApi
       .builder()
       .kafkaStreamsModule(KafkaStreamsModule(getConfig()))
       .build()
-      .server()
 
-    vertx.deployVerticleAwait(serverVerticle)
+    vertx.deployVerticleAwait(cqapi.server())
   }
 
   suspend fun getConfig(): JsonObject {

@@ -30,11 +30,15 @@ class KafkaStreamsModule constructor(private val config: JsonObject) {
 
   @Provides
   fun streams(): KafkaStreams {
+    val registryUrl = config.getJsonObject("kafka").getString("registryUrl")
+
     val streamsBuilder = StreamsBuilder()
+    val itemSerde = SpecificAvroSerde<Item>()
+    itemSerde.configure(mapOf("schema.registry.url" to registryUrl), false)
 
     streamsBuilder.table(
       "item-created-log",
-      Consumed.with(Serdes.String(), SpecificAvroSerde<Item>()),
+      Consumed.with(Serdes.String(), itemSerde),
       Materialized.`as`<String, Item, KeyValueStore<Bytes, ByteArray>>("item-created-table")
     )
 

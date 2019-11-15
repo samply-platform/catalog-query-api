@@ -1,28 +1,50 @@
 package org.samply.cqapi.web
 
-import io.vertx.core.AbstractVerticle
-import io.vertx.core.Promise
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import io.vertx.core.Context
+import io.vertx.core.Vertx
+import io.vertx.core.json.Json
+import io.vertx.core.json.jackson.DatabindCodec
+import io.vertx.ext.web.Route
 import io.vertx.ext.web.Router
+import io.vertx.ext.web.RoutingContext
+import io.vertx.kotlin.core.http.listenAwait
+import io.vertx.kotlin.coroutines.CoroutineVerticle
+import io.vertx.kotlin.coroutines.dispatcher
+import kotlinx.coroutines.launch
+import org.apache.kafka.streams.KafkaStreams
 import javax.inject.Inject
 
-class ServerVerticle @Inject constructor(private val itemsController: ItemsController) : AbstractVerticle() {
+class ServerVerticle @Inject constructor(private val itemsController: ItemsController,
+                                         private val kafkaStreams: KafkaStreams) : CoroutineVerticle() {
 
-  override fun start(startPromise: Promise<Void>) {
+  override fun init(vertx: Vertx, context: Context) {
+    super.init(vertx, context)
+    kafkaStreams.start()
+    DatabindCodec.mapper().registerKotlinModule()
+    DatabindCodec.prettyMapper().registerKotlinModule()
+  }
 
+  override suspend fun start() {
     val router = Router.router(vertx)
-    router.get("/items/:id").handler(itemsController::getItemById)
+    router.get("/items/:id").coroutineHandler(itemsController::getItemById)
 
     vertx
       .createHttpServer()
       .requestHandler(router)
-      .listen(8888) { http ->
-        if (http.succeeded()) {
-          startPromise.complete()
-          println("HTTP server started on port 8888")
-        } else {
-          startPromise.fail(http.cause())
+      .listenAwait(8888)
+  }
+
+  private fun Route.coroutineHandler(fn: suspend (RoutingContext) -> Unit) {
+    handler { ctx ->
+      launch(ctx.vertx().dispatcher()) {
+        try {
+          fn(ctx)
+        } catch (e: Exception) {
+          ctx.fail(e)
         }
       }
+    }
   }
 
 }

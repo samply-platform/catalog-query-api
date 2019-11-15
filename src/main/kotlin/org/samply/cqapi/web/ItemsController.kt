@@ -1,17 +1,23 @@
 package org.samply.cqapi.web
 
+import io.vertx.core.json.Json
 import io.vertx.ext.web.RoutingContext
+import io.vertx.kotlin.coroutines.awaitResult
 import org.apache.kafka.streams.KafkaStreams
+import org.samply.cqapi.domain.ItemDTO
+import org.samply.cqapi.domain.ItemsQueryService
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class ItemsController @Inject constructor(kafkaStreams: KafkaStreams) {
+class ItemsController @Inject constructor(private val itemsQueryService: ItemsQueryService) {
 
-  fun getItemById(routingContext: RoutingContext) {
+  suspend fun getItemById(routingContext: RoutingContext) {
+    val itemById = itemsQueryService.findById(routingContext.request().getParam("id"))
+
     routingContext.response()
-      .putHeader("content-type", "text/plain")
-      .end("GET for item with ID ${routingContext.request().getParam("id")}")
+      .putHeader("content-type", "application/json")
+      .end(Json.encodePrettily(itemById))
   }
 
 }
