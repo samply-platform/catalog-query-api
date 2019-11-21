@@ -1,0 +1,18 @@
+type Query {
+  item(id: ID!): Item
+  items(sellerId: ID!): [Item]
+}
+
+type Item {
+  id: ID!
+  title: String!
+  description: String!
+  price: String!
+  category: Category!
+}
+
+enum Category {
+  A
+  B
+  C
+}
