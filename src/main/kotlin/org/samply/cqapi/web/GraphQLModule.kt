@@ -3,17 +3,10 @@ package org.samply.cqapi.web
 import dagger.Module
 import dagger.Provides
 import graphql.GraphQL
-import graphql.schema.DataFetcher
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.future.future
-import org.samply.cqapi.domain.ItemDTO
-import org.samply.cqapi.domain.ItemId
-import org.samply.cqapi.domain.ItemsQueryService
 import java.io.File
-import java.util.concurrent.CompletableFuture
 import javax.inject.Singleton
 
 @Module
@@ -31,21 +24,13 @@ class GraphQLModule {
 
   @Provides
   @Singleton
-  fun wiring(itemsQueryService: ItemsQueryService): RuntimeWiring {
+  internal fun wiring(graphQLItemsDataFetcher: GraphQLItemsDataFetcher): RuntimeWiring {
     return RuntimeWiring.newRuntimeWiring()
       .type("Query") { builder ->
-        builder.dataFetcher("item", itemByIdDataFetcher(itemsQueryService))
+        builder.dataFetcher("item", graphQLItemsDataFetcher.itemByIdDataFetcher)
+        builder.dataFetcher("items", graphQLItemsDataFetcher.itemsBySellerDataFetcher)
       }
       .build()
-  }
-
-  private fun itemByIdDataFetcher(itemsQueryService: ItemsQueryService): DataFetcher<CompletableFuture<ItemDTO?>> {
-    return DataFetcher {
-      val itemId = it.getArgument<ItemId>("id")
-      GlobalScope.future {
-        itemsQueryService.findById(itemId)
-      }
-    }
   }
 
 }
