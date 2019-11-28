@@ -15,3 +15,9 @@ docker-compose up
 ## Graphiql
 
 Go to [http://localhost:8888/graphiql/](http://localhost:8888/graphiql/)
+
+
+## Next
+
+* Updates
+* helm deployment

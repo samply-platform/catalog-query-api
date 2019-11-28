@@ -1,10 +1,11 @@
 type Query {
   item(id: ID!): Item
-  items(sellerId: ID!): [Item]
+  items(sellerId: ID, first: Int, after: ID): [Item]
 }
 
 type Item {
   id: ID!
+  sellerId: ID!
   title: String!
   description: String!
   price: String!

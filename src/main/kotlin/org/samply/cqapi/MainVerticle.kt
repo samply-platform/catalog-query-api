@@ -10,11 +10,13 @@ import io.vertx.kotlin.core.deployVerticleAwait
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.coroutines.CoroutineVerticle
+import kotlinx.coroutines.FlowPreview
 import org.samply.cqapi.domain.KafkaModule
 import org.samply.cqapi.web.GraphQLModule
 import org.samply.cqapi.web.ServerVerticle
 import javax.inject.Singleton
 
+@FlowPreview
 class MainVerticle : CoroutineVerticle() {
 
   @Singleton
@@ -32,7 +34,7 @@ class MainVerticle : CoroutineVerticle() {
     vertx.deployVerticleAwait(cqapi.server())
   }
 
-  suspend fun getConfig(): JsonObject {
+  private suspend fun getConfig(): JsonObject {
     val configRetrieverOptions = ConfigRetrieverOptions().setStores(listOf(
       ConfigStoreOptions()
         .setType("file")

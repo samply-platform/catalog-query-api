@@ -6,10 +6,12 @@ import graphql.GraphQL
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
+import kotlinx.coroutines.FlowPreview
 import java.io.File
 import javax.inject.Singleton
 
 @Module
+@FlowPreview
 class GraphQLModule {
 
   @Provides
@@ -28,7 +30,7 @@ class GraphQLModule {
     return RuntimeWiring.newRuntimeWiring()
       .type("Query") { builder ->
         builder.dataFetcher("item", graphQLItemsDataFetcher.itemByIdDataFetcher)
-        builder.dataFetcher("items", graphQLItemsDataFetcher.itemsBySellerDataFetcher)
+        builder.dataFetcher("items", graphQLItemsDataFetcher.itemsDataFetcher)
       }
       .build()
   }
