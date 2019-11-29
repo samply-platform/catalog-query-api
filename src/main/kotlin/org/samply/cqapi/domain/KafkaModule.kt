@@ -35,9 +35,9 @@ class KafkaModule constructor(private val config: JsonObject) {
     val kafkaConfig = config.getJsonObject("kafka")
 
     val props = Properties()
-    props.put(StreamsConfig.APPLICATION_ID_CONFIG, "cqapi");
-    props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getString("bootstrapServers"));
-    props.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
+    props[StreamsConfig.APPLICATION_ID_CONFIG] = "cqapi"
+    props[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaConfig.getString("bootstrapServers")
+    props[StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG] = 0
     return props
   }
 
@@ -52,7 +52,7 @@ class KafkaModule constructor(private val config: JsonObject) {
     return KafkaStreams(streamsBuilder.build(), streamsConfig())
   }
 
-  fun StreamsBuilder.itemCreatedTable(): KTable<String, Item> {
+  private fun StreamsBuilder.itemCreatedTable(): KTable<String, Item> {
     return this.table(
       "item-created-log",
       Consumed.with(Serdes.String(), itemSerde),
