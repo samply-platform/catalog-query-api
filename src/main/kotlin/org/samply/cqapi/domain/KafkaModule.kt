@@ -46,22 +46,28 @@ class KafkaModule constructor(private val config: JsonObject) {
   fun streams(): KafkaStreams {
     val streamsBuilder = StreamsBuilder()
 
-    val itemCreatedTable = streamsBuilder.itemCreatedTable()
-    itemsCreatedBySellerTable(itemCreatedTable)
+    val itemTable = streamsBuilder.itemTable()
+    itemsCreatedBySellerTable(itemTable)
 
     return KafkaStreams(streamsBuilder.build(), streamsConfig())
   }
 
-  private fun StreamsBuilder.itemCreatedTable(): KTable<String, Item> {
-    return this.table(
-      "item-created-log",
-      Consumed.with(Serdes.String(), itemSerde),
-      Materialized.`as`<String, Item, KeyValueStore<Bytes, ByteArray>>(ITEM_CREATED_TABLE_STORE)
+  private fun StreamsBuilder.itemTable(): KTable<String, Item> {
+    val itemCreatedTable = this.table("item-created-log", Consumed.with(Serdes.String(), itemSerde))
+    val itemUpdatedTable = this.table("item-updated-log", Consumed.with(Serdes.String(), itemSerde))
+
+    return itemCreatedTable.leftJoin(
+      itemUpdatedTable,
+      { item: Item, update: Item? ->  update?.takeIf { it.getSellerId() == item.getSellerId() } ?: item },
+      Materialized
+        .`as`<String, Item, KeyValueStore<Bytes, ByteArray>>(ITEM_CREATED_TABLE_STORE)
+        .withKeySerde(Serdes.String())
+        .withValueSerde(itemSerde)
     )
   }
 
-  private fun itemsCreatedBySellerTable(itemCreatedTable: KTable<String, Item>): KTable<SellerId, Collection<Item>> {
-    return itemCreatedTable
+  private fun itemsCreatedBySellerTable(itemTable: KTable<String, Item>): KTable<SellerId, Collection<Item>> {
+    return itemTable
       .groupBy(
         { _, v -> KeyValue(v.getSellerId(), v) },
         Grouped.with(Serdes.String(), itemSerde)
