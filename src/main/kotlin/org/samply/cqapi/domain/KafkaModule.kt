@@ -20,8 +20,8 @@ import javax.inject.Singleton
 class KafkaModule constructor(private val config: JsonObject) {
 
   companion object {
-    const val ITEM_CREATED_TABLE_STORE = "item-created-table"
-    const val SELLER_TO_ITEM_CREATED_STORE = "item-created-by-seller"
+    const val ITEM_LOG_TABLE = "item-log-table"
+    const val ITEM_LOG_BY_SELLER_TABLE = "item-log-by-seller-table"
   }
 
   private val itemSerde = SpecificAvroSerde<Item>()
@@ -46,40 +46,34 @@ class KafkaModule constructor(private val config: JsonObject) {
   fun streams(): KafkaStreams {
     val streamsBuilder = StreamsBuilder()
 
-    val itemTable = streamsBuilder.itemTable()
-    itemsCreatedBySellerTable(itemTable)
+    val itemCreatedTable = streamsBuilder.itemLogTable()
+    itemLogBySellerTable(itemCreatedTable)
 
     return KafkaStreams(streamsBuilder.build(), streamsConfig())
   }
 
-  private fun StreamsBuilder.itemTable(): KTable<String, Item> {
-    val itemCreatedTable = this.table("item-created-log", Consumed.with(Serdes.String(), itemSerde))
-    val itemUpdatedTable = this.table("item-updated-log", Consumed.with(Serdes.String(), itemSerde))
-
-    return itemCreatedTable.leftJoin(
-      itemUpdatedTable,
-      { item: Item, update: Item? ->  update?.takeIf { it.getSellerId() == item.getSellerId() } ?: item },
-      Materialized
-        .`as`<String, Item, KeyValueStore<Bytes, ByteArray>>(ITEM_CREATED_TABLE_STORE)
-        .withKeySerde(Serdes.String())
-        .withValueSerde(itemSerde)
+  private fun StreamsBuilder.itemLogTable(): KTable<String, Item> {
+    return this.table(
+      "item-log",
+      Consumed.with(Serdes.String(), itemSerde),
+      Materialized.`as`<String, Item, KeyValueStore<Bytes, ByteArray>>(ITEM_LOG_TABLE)
     )
   }
 
-  private fun itemsCreatedBySellerTable(itemTable: KTable<String, Item>): KTable<SellerId, Collection<Item>> {
-    return itemTable
+  private fun itemLogBySellerTable(itemCreatedTable: KTable<String, Item>): KTable<SellerId, Collection<ItemId>> {
+    return itemCreatedTable
       .groupBy(
-        { _, v -> KeyValue(v.getSellerId(), v) },
-        Grouped.with(Serdes.String(), itemSerde)
+        { itemId, item -> KeyValue(item.getSellerId(), itemId) },
+        Grouped.with(Serdes.String(), Serdes.String())
       )
       .aggregate(
         { hashSetOf() },
         { _, value, aggregate -> aggregate + value },
         { _, value, aggregate -> aggregate - value },
         Materialized
-          .`as`<String, Collection<Item>, KeyValueStore<Bytes, ByteArray>>(SELLER_TO_ITEM_CREATED_STORE)
+          .`as`<String, Collection<ItemId>, KeyValueStore<Bytes, ByteArray>>(ITEM_LOG_BY_SELLER_TABLE)
           .withKeySerde(Serdes.String())
-          .withValueSerde(collectionSerde(itemSerde))
+          .withValueSerde(collectionSerde(Serdes.String()))
       )
   }
 
