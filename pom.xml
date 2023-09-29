@@ -25,7 +25,7 @@
     <vertx.verticle>${main.verticle}</vertx.verticle>
     <dagger.version>2.25.2</dagger.version>
     <confluent.version>5.3.1</confluent.version>
-    <avro.version>1.9.1</avro.version>
+    <avro.version>1.11.3</avro.version>
     <slf4j.version>1.7.29</slf4j.version>
   </properties>
 
